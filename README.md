@@ -7,7 +7,7 @@ https://paw-2026-changuito-docs-git-master-jbrodi99s-projects.vercel.app/
 
 ---
 
-Repositorio reservado para la documentación y las pruebas del backend de Cha¿ permite armar pedidos y analizarlas.
+Repositorio reservado para la documentación y las pruebas del backend de Changuito permite armar pedidos y analizarlas.
 
 
 - Usuarios y roles: cliente, supermercado, repartidor y administrador.
