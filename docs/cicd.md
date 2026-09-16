@@ -395,6 +395,35 @@ Si algo de esto falla, el punto más común de falla es 3.5 (permiso de la VM
 para hacer `pull`) o un secret mal copiado en la sección 4 — los errores del
 job de `deploy-dev.yml` en Actions dicen en qué step se cortó.
 
+## 6.1 Problemas reales que salieron al probarlo (y por qué el workflow tiene `sudo`)
+
+La primera vez que corrió `deploy-dev.yml` fallaron dos cosas seguidas, las
+dos por la misma causa raíz: **el usuario Linux que `gcloud compute
+ssh`/`scp` crea para la conexión del CI no es el mismo usuario** con el que
+preparaste la VM a mano en 3.5. Cada corrida de Actions arranca en una
+máquina nueva, gcloud sube una clave SSH efímera al metadata del proyecto, y
+GCE crea (o reutiliza) un usuario Linux derivado de esa identidad — distinto
+del tuyo.
+
+1. **`scp` fallaba con `Permission denied`** al escribir en
+   `/opt/changuito/docker-compose.yml`, porque esa carpeta quedó con tu
+   usuario como dueño (`chown "$USER":"$USER"` en 3.5). Fix: copiar a `/tmp`
+   (escribible por cualquiera) y moverlo a destino con `sudo` en el paso
+   siguiente.
+2. **`docker compose pull` fallaba con `Unauthenticated request`**, porque
+   `sudo` hace correr esos comandos como `root`, y las credenciales de
+   Artifact Registry (`gcloud auth configure-docker`) habían quedado
+   guardadas solo en el `$HOME` de tu usuario interactivo, no en el de
+   `root`. Fix: repetir `gcloud auth configure-docker` dentro del mismo
+   bloque `sudo bash -c '...'` que hace el `pull`, así corre en el mismo
+   contexto.
+
+Las cuentas que GCE crea a partir de una SSH key de metadata quedan con
+`sudo` sin contraseña por default — por eso la solución elegida fue "todo el
+deploy corre con `sudo`" en vez de tratar de replicar permisos/grupos
+específicos para un usuario cuyo nombre ni siquiera es predecible de
+antemano (depende de quién dispare el workflow).
+
 ## 7. Rollback
 
 Sin re-ejecutar el pipeline: en la VM, editar `/opt/changuito/.env` y fijar
