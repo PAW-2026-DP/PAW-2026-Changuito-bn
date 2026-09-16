@@ -6,10 +6,29 @@ repartidor y administrador.
 
 ## Estado actual
 
-Proyecto en etapa inicial: la estructura de carpetas (`src/`, `test/`) está
-creada pero todavía no hay código PHP, dependencias (Composer) ni base de
-datos configurados. La arquitectura definitiva se implementa siguiendo los
-lineamientos importados abajo.
+Proyecto en etapa inicial: la estructura de carpetas (`src/`, `tests/`,
+`public/`) y el entorno de contenedores están creados, pero todavía no hay
+código PHP de dominio ni base de datos con esquema. La arquitectura
+definitiva se implementa siguiendo los lineamientos importados abajo.
+
+## Entorno de desarrollo (Docker)
+
+Todo el desarrollo corre en contenedores para que el equipo comparta
+exactamente las mismas dependencias, extensiones de PHP y versión — y esas
+mismas capas (`docker/php/Dockerfile`, stage `base`) son las que arma la
+imagen de deploy, así dev y producción nunca divergen en dependencias.
+
+- Servicios (`docker-compose.yml`): `app` (PHP-FPM, stage `dev` con Xdebug),
+  `nginx` (sirve `public/`), `db` (MariaDB).
+- Primer uso: `cp .env.example .env`, luego `docker compose up -d --build`.
+- Instalar/actualizar dependencias: `docker compose exec app composer install`
+  (o `composer require ...`) — nunca con Composer local, para que
+  `composer.lock` quede generado con la misma versión de PHP/extensiones del
+  contenedor.
+- Tests: `docker compose exec app vendor/bin/phpunit`.
+- La imagen de deploy se construye con `docker build --target production
+  -f docker/php/Dockerfile .` — mismo `Dockerfile`, stage sin Xdebug ni
+  dependencias `require-dev`, con autoload optimizado.
 
 ## Lineamientos del equipo
 

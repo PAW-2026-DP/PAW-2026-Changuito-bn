@@ -1,0 +1,10 @@
+/vendor/
+composer.phar
+
+.env
+.env.*
+!.env.example
+
+.idea/
+.vscode/
+*.log
