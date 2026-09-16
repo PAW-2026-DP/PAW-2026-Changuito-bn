@@ -8,3 +8,6 @@ composer.phar
 .idea/
 .vscode/
 *.log
+
+.phpunit.cache/
+.phpunit.result.cache
