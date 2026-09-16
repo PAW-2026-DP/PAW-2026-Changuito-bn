@@ -71,13 +71,18 @@ jobs:
       # Las cuentas que gcloud crea via SSH key de metadata quedan con sudo
       # sin password por default en GCE, asi que todo el deploy corre con
       # sudo en vez de depender de permisos/grupos del usuario de turno.
+      # Las credenciales de Artifact Registry (gcloud auth configure-docker)
+      # quedan guardadas en el HOME del usuario que las corrio, asi que se
+      # repiten aca dentro del mismo bloque sudo para que apliquen al mismo
+      # contexto que hace el pull, en vez de asumir que ya estan disponibles.
       - name: Deploy en la VM
         run: |
           gcloud compute ssh ${{ secrets.GCP_VM_NAME }} \
             --zone ${{ secrets.GCP_VM_ZONE }} \
             --tunnel-through-iap \
             --command "sudo mv /tmp/docker-compose.yml /opt/changuito/docker-compose.yml && \
-              sudo bash -c 'cd /opt/changuito && \
+              sudo bash -c 'gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev --quiet && \
+                cd /opt/changuito && \
                 sed -i \"/^IMAGE_TAG=/d\" .env && \
                 echo \"IMAGE_TAG=sha-${{ github.sha }}\" >> .env && \
                 docker compose pull && \
