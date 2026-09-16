@@ -1,0 +1,10 @@
+.git
+.gitignore
+.claude
+.env
+.env.*
+!.env.example
+vendor
+tests
+docs
+README.md
