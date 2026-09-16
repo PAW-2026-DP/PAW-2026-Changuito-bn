@@ -57,24 +57,32 @@ jobs:
             ${{ steps.vars.outputs.image_repo }}/nginx:dev
             ${{ steps.vars.outputs.image_repo }}/nginx:sha-${{ github.sha }}
 
+      # El usuario Linux que gcloud crea para esta conexion (derivado de la
+      # cuenta que corre el runner) no es dueno de /opt/changuito, asi que no
+      # puede escribir ahi directo. /tmp es escribible por cualquier usuario;
+      # el paso siguiente lo mueve a destino con sudo.
       - name: Copiar docker-compose.dev.yml a la VM
         run: |
           gcloud compute scp deploy/docker-compose.dev.yml \
-            ${{ secrets.GCP_VM_NAME }}:/opt/changuito/docker-compose.yml \
+            ${{ secrets.GCP_VM_NAME }}:/tmp/docker-compose.yml \
             --zone ${{ secrets.GCP_VM_ZONE }} \
             --tunnel-through-iap
 
+      # Las cuentas que gcloud crea via SSH key de metadata quedan con sudo
+      # sin password por default en GCE, asi que todo el deploy corre con
+      # sudo en vez de depender de permisos/grupos del usuario de turno.
       - name: Deploy en la VM
         run: |
           gcloud compute ssh ${{ secrets.GCP_VM_NAME }} \
             --zone ${{ secrets.GCP_VM_ZONE }} \
             --tunnel-through-iap \
-            --command "cd /opt/changuito && \
-              export IMAGE_TAG=sha-${{ github.sha }} && \
-              sed -i '/^IMAGE_TAG=/d' .env && echo \"IMAGE_TAG=sha-${{ github.sha }}\" >> .env && \
-              docker compose pull && \
-              docker compose up -d --remove-orphans && \
-              docker image prune -f"
+            --command "sudo mv /tmp/docker-compose.yml /opt/changuito/docker-compose.yml && \
+              sudo bash -c 'cd /opt/changuito && \
+                sed -i \"/^IMAGE_TAG=/d\" .env && \
+                echo \"IMAGE_TAG=sha-${{ github.sha }}\" >> .env && \
+                docker compose pull && \
+                docker compose up -d --remove-orphans && \
+                docker image prune -f'"
 
       - name: Smoke test
         run: |
