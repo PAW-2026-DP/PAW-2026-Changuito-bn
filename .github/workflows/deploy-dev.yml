@@ -1,0 +1,82 @@
+name: Deploy DEV
+
+on:
+  push:
+    branches: [dev]
+
+# id-token: write es lo que permite el intercambio OIDC de Workload Identity
+# Federation, sin ninguna clave de service account guardada en secrets.
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  build-and-deploy:
+    name: Build, push y deploy a la VM de DEV
+    runs-on: ubuntu-latest
+    environment: dev
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Autenticar contra GCP (Workload Identity Federation)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Configurar gcloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configurar Docker contra Artifact Registry
+        run: gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev --quiet
+
+      - name: Set image repo
+        id: vars
+        run: echo "image_repo=${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/changuito" >> "$GITHUB_OUTPUT"
+
+      - name: Build y push imagen app
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/php/Dockerfile
+          target: production
+          push: true
+          tags: |
+            ${{ steps.vars.outputs.image_repo }}/app:dev
+            ${{ steps.vars.outputs.image_repo }}/app:sha-${{ github.sha }}
+
+      - name: Build y push imagen nginx
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/nginx/Dockerfile
+          push: true
+          tags: |
+            ${{ steps.vars.outputs.image_repo }}/nginx:dev
+            ${{ steps.vars.outputs.image_repo }}/nginx:sha-${{ github.sha }}
+
+      - name: Copiar docker-compose.dev.yml a la VM
+        run: |
+          gcloud compute scp deploy/docker-compose.dev.yml \
+            ${{ secrets.GCP_VM_NAME }}:/opt/changuito/docker-compose.yml \
+            --zone ${{ secrets.GCP_VM_ZONE }} \
+            --tunnel-through-iap
+
+      - name: Deploy en la VM
+        run: |
+          gcloud compute ssh ${{ secrets.GCP_VM_NAME }} \
+            --zone ${{ secrets.GCP_VM_ZONE }} \
+            --tunnel-through-iap \
+            --command "cd /opt/changuito && \
+              export IMAGE_TAG=sha-${{ github.sha }} && \
+              sed -i '/^IMAGE_TAG=/d' .env && echo \"IMAGE_TAG=sha-${{ github.sha }}\" >> .env && \
+              docker compose pull && \
+              docker compose up -d --remove-orphans && \
+              docker image prune -f"
+
+      - name: Smoke test
+        run: |
+          sleep 5
+          curl -fsS "http://${{ secrets.DEV_HOST }}/" | grep -q 'Hello, World!'

@@ -5,6 +5,8 @@
 ## Docs
 https://paw-2026-changuito-docs-git-master-jbrodi99s-projects.vercel.app/
 
+- [CI/CD](docs/cicd.md): configuración de GitHub Actions, Artifact Registry, Workload Identity Federation y despliegue a la VM de DEV.
+
 ---
 
 Repositorio reservado para la documentación y las pruebas del backend de Cha¿ permite armar pedidos y analizarlas.
