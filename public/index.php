@@ -4,11 +4,17 @@ declare(strict_types=1);
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
-// Front controller: arma el contenedor, registra rutas y despacha.
-// Placeholder hasta que existan Router/Pipeline/Handler en src/Http/:
-// por ahora responde siempre el mismo JSON, solo para validar que la
-// cadena Nginx -> PHP-FPM -> PHP funciona end to end.
+use App\Http\Request;
+use App\Http\Response;
 
-header('Content-Type: application/json; charset=utf-8');
+// Front controller: arma la app (router + pipeline) y despacha la request.
+$app = require dirname(__DIR__) . '/config/container.php';
 
-echo json_encode(['message' => 'Hello, World!'], JSON_THROW_ON_ERROR);
+try {
+    $response = $app->handle(Request::fromGlobals());
+} catch (\Throwable $exception) {
+    error_log($exception->getMessage());
+    $response = Response::error('Internal Server Error', 500);
+}
+
+$response->send();
