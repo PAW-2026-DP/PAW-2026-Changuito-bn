@@ -9,6 +9,24 @@ jobs:
     name: Tests y build
     runs-on: ubuntu-latest
 
+    # Base de test para los tests de Integration (ver ConnectionFactory::forTests()
+    # y reglas-testing.md: Infrastructure se testea contra una base real, no con mocks).
+    services:
+      mariadb:
+        image: mariadb:11
+        env:
+          MARIADB_DATABASE: changuito_test
+          MARIADB_USER: changuito
+          MARIADB_PASSWORD: changuito
+          MARIADB_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -27,6 +45,12 @@ jobs:
         uses: ramsey/composer-install@v3
 
       - name: Run test suite
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_TEST_DATABASE: changuito_test
+          DB_USERNAME: changuito
+          DB_PASSWORD: changuito
         run: vendor/bin/phpunit --colors=always
 
       # Verifica que la imagen de deploy sigue armando. No se pushea nada acá:
