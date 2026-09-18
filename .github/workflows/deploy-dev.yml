@@ -89,7 +89,10 @@ jobs:
                 docker compose up -d --remove-orphans && \
                 docker image prune -f'"
 
+      # /health es el endpoint de infraestructura sin versionar (ver
+      # config/routes.php): "/" dejó de existir desde que el router real
+      # reemplazó al esqueleto hello-world.
       - name: Smoke test
         run: |
           sleep 5
-          curl -fsS "http://${{ secrets.DEV_HOST }}/" | grep -q 'Hello, World!'
+          curl -fsS "http://${{ secrets.DEV_HOST }}/health" | grep -q '"status":"ok"'
