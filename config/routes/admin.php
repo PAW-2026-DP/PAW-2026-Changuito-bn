@@ -63,5 +63,27 @@ return static function (Router $router, PDO $pdo): void {
         $router->put('/sucursales/{id}/zona-cobertura', new CallableHandler(
             static fn (Request $request): Response => $comercios->definirZonaCobertura($request),
         ));
+
+        $catalogo = $modulo['adminCatalogoController'];
+
+        $router->get('/categorias', new CallableHandler(
+            static fn (Request $request): Response => $catalogo->listarCategorias($request),
+        ));
+
+        $router->post('/categorias', new CallableHandler(
+            static fn (Request $request): Response => $catalogo->crearCategoria($request),
+        ));
+
+        $router->get('/productos', new CallableHandler(
+            static fn (Request $request): Response => $catalogo->buscarProductos($request),
+        ));
+
+        $router->post('/productos', new CallableHandler(
+            static fn (Request $request): Response => $catalogo->crearProducto($request),
+        ));
+
+        $router->put('/productos/{id}', new CallableHandler(
+            static fn (Request $request): Response => $catalogo->actualizarProducto($request),
+        ));
     });
 };
