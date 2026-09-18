@@ -53,6 +53,15 @@ final class DineroTest extends TestCase
         self::assertTrue(Dinero::pesos(10)->equals(Dinero::centavos(1000)));
     }
 
+    public function test_multiplica_por_un_factor_fraccionario_redondeando_al_centavo(): void
+    {
+        // Arrange / Act
+        $resultado = Dinero::pesos(100)->multiplicarPorFactor(5.656854);
+
+        // Assert
+        self::assertSame(56569, $resultado->centavos);
+    }
+
     public function test_lanza_excepcion_de_validacion_si_el_monto_es_negativo(): void
     {
         // Assert

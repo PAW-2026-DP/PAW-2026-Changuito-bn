@@ -48,6 +48,15 @@ final class Dinero
         return new self($this->centavos * $factor);
     }
 
+    public function multiplicarPorFactor(float $factor): self
+    {
+        if ($factor < 0) {
+            throw new ValidacionException('El factor no puede ser negativo.');
+        }
+
+        return new self((int) round($this->centavos * $factor));
+    }
+
     public function esMayorQue(self $otro): bool
     {
         return $this->centavos > $otro->centavos;
