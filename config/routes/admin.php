@@ -85,5 +85,39 @@ return static function (Router $router, PDO $pdo): void {
         $router->put('/productos/{id}', new CallableHandler(
             static fn (Request $request): Response => $catalogo->actualizarProducto($request),
         ));
+
+        $logistica = $modulo['adminLogisticaController'];
+
+        $router->get('/parametros-logisticos', new CallableHandler(
+            static fn (Request $request): Response => $logistica->listarParametros($request),
+        ));
+
+        $router->put('/parametros-logisticos/{tamanio}', new CallableHandler(
+            static fn (Request $request): Response => $logistica->definirParametro($request),
+        ));
+
+        $router->get('/coeficientes-distancia', new CallableHandler(
+            static fn (Request $request): Response => $logistica->listarCoeficientes($request),
+        ));
+
+        $router->post('/coeficientes-distancia', new CallableHandler(
+            static fn (Request $request): Response => $logistica->crearCoeficiente($request),
+        ));
+
+        $router->put('/coeficientes-distancia/{id}', new CallableHandler(
+            static fn (Request $request): Response => $logistica->actualizarCoeficiente($request),
+        ));
+
+        $router->delete('/coeficientes-distancia/{id}', new CallableHandler(
+            static fn (Request $request): Response => $logistica->eliminarCoeficiente($request),
+        ));
+
+        $router->get('/parametros-reparto', new CallableHandler(
+            static fn (Request $request): Response => $logistica->verParametrosDeReparto($request),
+        ));
+
+        $router->put('/parametros-reparto', new CallableHandler(
+            static fn (Request $request): Response => $logistica->definirParametrosDeReparto($request),
+        ));
     });
 };

@@ -4,12 +4,17 @@ declare(strict_types=1);
 
 use App\Application\AdminCatalogoService;
 use App\Application\AdminComercioService;
+use App\Application\AdminLogisticaService;
 use App\Application\AdminUsuarioService;
 use App\Http\Controller\AdminCatalogoController;
 use App\Http\Controller\AdminComercioController;
+use App\Http\Controller\AdminLogisticaController;
 use App\Http\Controller\AdminUsuarioController;
 use App\Infrastructure\Database\PdoUnitOfWork;
 use App\Infrastructure\PdoCategoriaRepository;
+use App\Infrastructure\PdoCoeficienteDistanciaRepository;
+use App\Infrastructure\PdoParametroLogisticoRepository;
+use App\Infrastructure\PdoParametroRepartoRepository;
 use App\Infrastructure\PdoProductoRepository;
 use App\Infrastructure\PdoSucursalRepository;
 use App\Infrastructure\PdoSupermercadoRepository;
@@ -17,13 +22,15 @@ use App\Infrastructure\PdoUsuarioRepository;
 use App\Infrastructure\PdoZonaCoberturaRepository;
 
 /**
- * Cableado del panel de administración. Los sub-módulos de admin comparten
- * archivo porque comparten el mismo grupo de rutas y el mismo RolMiddleware.
+ * Cableado del panel de administración. Los cuatro sub-módulos (usuarios,
+ * comercios, catálogo y parámetros) comparten archivo porque comparten el
+ * mismo grupo de rutas y el mismo RolMiddleware.
  *
  * @return array{
  *     adminUsuarioController: AdminUsuarioController,
  *     adminComercioController: AdminComercioController,
- *     adminCatalogoController: AdminCatalogoController
+ *     adminCatalogoController: AdminCatalogoController,
+ *     adminLogisticaController: AdminLogisticaController
  * }
  */
 return static function (PDO $pdo): array {
@@ -41,6 +48,11 @@ return static function (PDO $pdo): array {
         'adminCatalogoController' => new AdminCatalogoController(new AdminCatalogoService(
             new PdoCategoriaRepository($pdo),
             new PdoProductoRepository($pdo),
+        )),
+        'adminLogisticaController' => new AdminLogisticaController(new AdminLogisticaService(
+            new PdoParametroLogisticoRepository($pdo),
+            new PdoCoeficienteDistanciaRepository($pdo),
+            new PdoParametroRepartoRepository($pdo),
         )),
     ];
 };
