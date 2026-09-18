@@ -64,6 +64,11 @@ final class TokenAcceso
         return $this->revocadoEn !== null;
     }
 
+    public function revocadoEn(): ?\DateTimeImmutable
+    {
+        return $this->revocadoEn;
+    }
+
     public function esValido(\DateTimeImmutable $ahora): bool
     {
         return $this->revocadoEn === null && $ahora < $this->expiraEn;
