@@ -6,31 +6,21 @@ use App\Http\Controller\PingController;
 use App\Http\Router;
 
 /**
- * Registro de rutas de la app. Se agregan acá a medida que llegan las
- * reglas de negocio de cada módulo; por ahora solo hay una ruta de
- * verificación (`/health`) y ejemplos comentados por rol, apuntando todos
- * al PingController de prueba hasta tener los controladores reales.
+ * Registro de rutas de la app. `/health` queda fuera del versionado por ser
+ * infraestructura (lo usan los healthchecks del deploy). Las rutas de
+ * negocio van bajo `/api/v1`, un archivo por módulo en `config/routes/`,
+ * para que cada módulo se pueda desarrollar en su propia rama sin pisar
+ * este archivo (ver plans/rutas-controladores-y-ramas.md).
  */
 return static function (Router $router): void {
     $router->get('/health', new PingController());
 
-    // --- Cliente ---
-    // TODO: reemplazar por controladores reales según reglas de negocio.
-    // $router->get('/pedidos', new PingController());
-    // $router->post('/pedidos', new PingController());
-    // $router->get('/pedidos/{id}', new PingController());
+    $router->group('/api/v1', [], static function (Router $router): void {
+        $moduleRouteFiles = glob(__DIR__ . '/routes/*.php') ?: [];
+        sort($moduleRouteFiles);
 
-    // --- Supermercado ---
-    // TODO: reemplazar por controladores reales según reglas de negocio.
-    // $router->get('/supermercados/{id}/productos', new PingController());
-    // $router->put('/supermercados/{id}/productos/{productId}', new PingController());
-
-    // --- Repartidor ---
-    // TODO: reemplazar por controladores reales según reglas de negocio.
-    // $router->get('/entregas', new PingController());
-    // $router->patch('/entregas/{id}', new PingController());
-
-    // --- Administrador ---
-    // TODO: reemplazar por controladores reales según reglas de negocio.
-    // $router->get('/admin/usuarios', new PingController());
+        foreach ($moduleRouteFiles as $moduleRouteFile) {
+            (require $moduleRouteFile)($router);
+        }
+    });
 };

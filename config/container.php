@@ -6,9 +6,10 @@ use App\Http\Pipeline;
 use App\Http\Router;
 
 /**
- * Arma la app: registra las rutas y la envuelve en el Pipeline de
- * middlewares (vacío por ahora — se van agregando acá sin tocar
- * controladores existentes).
+ * Arma la app: registra las rutas (config/routes.php) y las envuelve en el
+ * Pipeline con los middlewares globales (config/container/middlewares.php).
+ * Agregar un middleware nuevo, o el cableado de un módulo nuevo en
+ * config/container/, no requiere tocar esta función.
  *
  * @return App\Http\Handler
  */
@@ -17,9 +18,7 @@ return (static function () {
 
     (require __DIR__ . '/routes.php')($router);
 
-    $middlewares = [
-        // TODO: agregar middlewares (auth, CORS, logging) a medida que se necesiten.
-    ];
+    $middlewares = (require __DIR__ . '/container/middlewares.php')();
 
     return new Pipeline($router, $middlewares);
 })();

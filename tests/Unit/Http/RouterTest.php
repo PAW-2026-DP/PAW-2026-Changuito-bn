@@ -9,6 +9,7 @@ use App\Http\Response;
 use App\Http\Router;
 use PHPUnit\Framework\TestCase;
 use Tests\Fakes\EchoHandler;
+use Tests\Fakes\HeaderMiddleware;
 
 final class RouterTest extends TestCase
 {
@@ -76,5 +77,86 @@ final class RouterTest extends TestCase
 
         // Assert
         self::assertSame(201, $response->status);
+    }
+
+    public function test_aplica_el_prefijo_del_grupo_a_las_rutas_registradas_dentro(): void
+    {
+        // Arrange
+        $router = new Router();
+        $router->group('/api/v1', [], static function (Router $router): void {
+            $router->get('/health', new EchoHandler());
+        });
+
+        // Act
+        $response = $router->handle(new Request('GET', '/api/v1/health'));
+
+        // Assert
+        self::assertSame(200, $response->status);
+    }
+
+    public function test_las_rutas_de_un_grupo_no_responden_sin_el_prefijo(): void
+    {
+        // Arrange
+        $router = new Router();
+        $router->group('/api/v1', [], static function (Router $router): void {
+            $router->get('/health', new EchoHandler());
+        });
+
+        // Act
+        $response = $router->handle(new Request('GET', '/health'));
+
+        // Assert
+        self::assertSame(404, $response->status);
+    }
+
+    public function test_ejecuta_los_middlewares_del_grupo_alrededor_de_la_ruta(): void
+    {
+        // Arrange
+        $router = new Router();
+        $router->group('/api/v1', [new HeaderMiddleware('X-Group', 'api-v1')], static function (Router $router): void {
+            $router->get('/health', new EchoHandler());
+        });
+
+        // Act
+        $response = $router->handle(new Request('GET', '/api/v1/health'));
+
+        // Assert
+        self::assertSame('api-v1', $response->headers['X-Group']);
+    }
+
+    public function test_los_grupos_anidados_combinan_prefijo_y_middlewares(): void
+    {
+        // Arrange
+        $router = new Router();
+        $router->group('/api', [new HeaderMiddleware('X-Outer', 'api')], static function (Router $router): void {
+            $router->group('/v1', [new HeaderMiddleware('X-Inner', 'v1')], static function (Router $router): void {
+                $router->get('/health', new EchoHandler());
+            });
+        });
+
+        // Act
+        $response = $router->handle(new Request('GET', '/api/v1/health'));
+
+        // Assert
+        self::assertSame(200, $response->status);
+        self::assertSame('api', $response->headers['X-Outer']);
+        self::assertSame('v1', $response->headers['X-Inner']);
+    }
+
+    public function test_una_ruta_fuera_de_todo_grupo_no_lleva_middlewares(): void
+    {
+        // Arrange: registrar un grupo y luego una ruta suelta no debe
+        // arrastrar los middlewares del grupo anterior.
+        $router = new Router();
+        $router->group('/api/v1', [new HeaderMiddleware('X-Group', 'api-v1')], static function (Router $router): void {
+            $router->get('/health', new EchoHandler());
+        });
+        $router->get('/fuera-del-grupo', new EchoHandler());
+
+        // Act
+        $response = $router->handle(new Request('GET', '/fuera-del-grupo'));
+
+        // Assert
+        self::assertArrayNotHasKey('X-Group', $response->headers);
     }
 }

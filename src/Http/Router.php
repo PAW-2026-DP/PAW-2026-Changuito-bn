@@ -18,6 +18,38 @@ final class Router implements Handler
      */
     private array $routes = [];
 
+    /**
+     * Pila de grupos abiertos mientras se ejecuta group(): cada uno ya trae
+     * acumulado el prefijo y los middlewares del/los grupo(s) padre.
+     *
+     * @var list<array{prefix: string, middlewares: list<Middleware>}>
+     */
+    private array $groupStack = [];
+
+    /**
+     * Agrupa rutas bajo un prefijo común (por ejemplo, el versionado
+     * `/api/v1` o un panel como `/admin`) envueltas en los middlewares
+     * indicados (por ejemplo, autenticación + rol). Los grupos se pueden
+     * anidar: el prefijo y los middlewares del padre se heredan.
+     *
+     * @param list<Middleware> $middlewares
+     */
+    public function group(string $prefix, array $middlewares, callable $callback): void
+    {
+        $parent = $this->currentGroup();
+
+        $this->groupStack[] = [
+            'prefix' => $this->joinSegments($parent['prefix'], $prefix),
+            'middlewares' => [...$parent['middlewares'], ...$middlewares],
+        ];
+
+        try {
+            $callback($this);
+        } finally {
+            array_pop($this->groupStack);
+        }
+    }
+
     public function get(string $path, Handler|callable $handler): void
     {
         $this->add('GET', $path, $handler);
@@ -45,10 +77,15 @@ final class Router implements Handler
 
     public function add(string $method, string $path, Handler|callable $handler): void
     {
-        $method = strtoupper($method);
-        $this->routes[$method][$path] = $handler instanceof Handler
-            ? $handler
-            : new CallableHandler($handler);
+        $group = $this->currentGroup();
+        $fullPath = $this->joinSegments($group['prefix'], $path);
+
+        $resolvedHandler = $handler instanceof Handler ? $handler : new CallableHandler($handler);
+        if ($group['middlewares'] !== []) {
+            $resolvedHandler = new Pipeline($resolvedHandler, $group['middlewares']);
+        }
+
+        $this->routes[strtoupper($method)][$fullPath] = $resolvedHandler;
     }
 
     public function handle(Request $request): Response
@@ -92,6 +129,22 @@ final class Router implements Handler
         }
 
         throw new RouteNotFoundException("No route matches path [{$path}]");
+    }
+
+    /**
+     * @return array{prefix: string, middlewares: list<Middleware>}
+     */
+    private function currentGroup(): array
+    {
+        return $this->groupStack[array_key_last($this->groupStack)] ?? ['prefix' => '', 'middlewares' => []];
+    }
+
+    private function joinSegments(string $base, string $path): string
+    {
+        $joined = rtrim($base, '/') . '/' . ltrim($path, '/');
+        $trimmed = rtrim($joined, '/');
+
+        return $trimmed === '' ? '/' : $trimmed;
     }
 
     /**

@@ -72,4 +72,30 @@ final class RequestTest extends TestCase
         self::assertSame('7', $withParams->routeParam('id'));
         self::assertNull($original->routeParam('id'));
     }
+
+    public function test_with_attribute_no_muta_la_request_original(): void
+    {
+        // Arrange: así es como AutenticacionMiddleware dejará al usuario
+        // autenticado disponible para el controlador, sin acoplarse a HTTP.
+        $original = new Request('GET', '/');
+
+        // Act
+        $withAttribute = $original->withAttribute('usuarioId', 'cliente-1');
+
+        // Assert
+        self::assertSame('cliente-1', $withAttribute->attribute('usuarioId'));
+        self::assertNull($original->attribute('usuarioId'));
+    }
+
+    public function test_devuelve_null_si_el_atributo_no_existe(): void
+    {
+        // Arrange
+        $request = new Request('GET', '/');
+
+        // Act
+        $value = $request->attribute('usuarioId');
+
+        // Assert
+        self::assertNull($value);
+    }
 }

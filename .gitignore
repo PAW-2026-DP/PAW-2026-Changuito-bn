@@ -14,3 +14,7 @@ composer.phar
 
 # Planes de trabajo locales (no se versionan)
 /plans/
+
+# Notas técnicas locales de cada etapa (resumen de decisiones para validar
+# en equipo antes de abrir PR; no se versionan)
+/.notas-tecnicas/

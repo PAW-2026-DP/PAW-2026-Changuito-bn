@@ -22,6 +22,7 @@ final class Request
      * @param array<string, string> $headers
      * @param array<string, mixed> $body
      * @param array<string, string> $routeParams
+     * @param array<string, mixed> $attributes
      */
     public function __construct(
         string $method,
@@ -30,6 +31,7 @@ final class Request
         array $headers = [],
         public readonly array $body = [],
         public readonly array $routeParams = [],
+        public readonly array $attributes = [],
     ) {
         $this->method = strtoupper($method);
         $this->path = self::normalizePath($path);
@@ -82,6 +84,24 @@ final class Request
             $this->headersWithOriginalCase(),
             $this->body,
             $params,
+            $this->attributes,
+        );
+    }
+
+    /**
+     * Agrega un dato calculado por un middleware (por ejemplo, el usuario
+     * autenticado) sin acoplar la Request a cómo se calculó.
+     */
+    public function withAttribute(string $name, mixed $value): self
+    {
+        return new self(
+            $this->method,
+            $this->path,
+            $this->query,
+            $this->headersWithOriginalCase(),
+            $this->body,
+            $this->routeParams,
+            [...$this->attributes, $name => $value],
         );
     }
 
@@ -98,6 +118,11 @@ final class Request
     public function routeParam(string $name): ?string
     {
         return $this->routeParams[$name] ?? null;
+    }
+
+    public function attribute(string $name): mixed
+    {
+        return $this->attributes[$name] ?? null;
     }
 
     /**
