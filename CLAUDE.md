@@ -47,7 +47,8 @@ contexto:
   Domain`, con `Infrastructure` implementando interfaces del `Domain`. Ver
   detalle completo en `lineamientos-desarrollo.md`.
 - **Git**: nunca pushear directo a `main` ni `dev`. Rama de trabajo
-  `feature/<branch>` desde `dev`, PR hacia `dev`, squash merge. Ver
+  `feature/<branch>` desde `dev` (puede agrupar varias features en un solo
+  PR), PR hacia `dev`, merge commit conservando los commits por feature. Ver
   `ramas-pr-despliegues.md`.
 - **Testing**: TDD obligatorio (Red → Green → Refactor), PHPUnit, patrón AAA,
   se prefieren Fakes sobre Mocks. Sin tests no hay PR aprobado. Ver
