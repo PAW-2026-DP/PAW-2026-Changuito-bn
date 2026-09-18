@@ -13,6 +13,7 @@ use App\Domain\Exception\ValidacionException;
 final class CoeficienteDistancia
 {
     public function __construct(
+        public readonly int $id,
         public readonly TamanioEnvio $tamanioEnvio,
         public readonly float $distanciaMinKm,
         public readonly float $distanciaMaxKm,

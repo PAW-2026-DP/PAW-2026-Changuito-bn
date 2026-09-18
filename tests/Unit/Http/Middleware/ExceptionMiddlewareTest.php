@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Http\Middleware;
 
 use App\Domain\Exception\AccesoDenegadoException;
+use App\Domain\Exception\CredencialesInvalidasException;
 use App\Domain\Exception\EntidadNoEncontradaException;
 use App\Domain\Exception\TransicionInvalidaException;
 use App\Domain\Exception\ValidacionException;
@@ -32,6 +33,18 @@ final class ExceptionMiddlewareTest extends TestCase
 
         // Assert
         self::assertSame(404, $response->status);
+    }
+
+    public function test_traduce_credenciales_invalidas_a_401(): void
+    {
+        // Arrange
+        $handler = new ThrowingHandler(new CredencialesInvalidasException('credenciales inválidas'));
+
+        // Act
+        $response = $this->middleware->process(new Request('GET', '/'), $handler);
+
+        // Assert
+        self::assertSame(401, $response->status);
     }
 
     public function test_traduce_acceso_denegado_a_403(): void

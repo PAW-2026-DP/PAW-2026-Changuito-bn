@@ -44,6 +44,17 @@ jobs:
       - name: Instalar dependencias
         uses: ramsey/composer-install@v3
 
+      # Los tests de Integration corren contra tablas reales, asi que el
+      # esquema tiene que estar aplicado antes de phpunit.
+      - name: Aplicar migraciones a la base de test
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_TEST_DATABASE: changuito_test
+          DB_USERNAME: changuito
+          DB_PASSWORD: changuito
+        run: php bin/migrate.php --test
+
       - name: Run test suite
         env:
           DB_HOST: 127.0.0.1

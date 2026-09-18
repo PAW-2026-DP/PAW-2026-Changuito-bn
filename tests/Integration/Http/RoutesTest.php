@@ -7,6 +7,7 @@ namespace Tests\Integration\Http;
 use App\Http\Handler;
 use App\Http\Request;
 use PHPUnit\Framework\TestCase;
+use Tests\Support\AplicacionDeTest;
 
 final class RoutesTest extends TestCase
 {
@@ -14,7 +15,7 @@ final class RoutesTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->app = require dirname(__DIR__, 3) . '/config/container.php';
+        $this->app = AplicacionDeTest::crear(AplicacionDeTest::conexion());
     }
 
     public function test_health_responde_ok(): void

@@ -11,16 +11,19 @@ use App\Http\Router;
  * negocio van bajo `/api/v1`, un archivo por módulo en `config/routes/`,
  * para que cada módulo se pueda desarrollar en su propia rama sin pisar
  * este archivo (ver plans/rutas-controladores-y-ramas.md).
+ *
+ * Cada archivo de módulo recibe la misma conexión PDO, así todos los
+ * repositorios de una request comparten una única conexión.
  */
-return static function (Router $router): void {
+return static function (Router $router, PDO $pdo): void {
     $router->get('/health', new PingController());
 
-    $router->group('/api/v1', [], static function (Router $router): void {
+    $router->group('/api/v1', [], static function (Router $router) use ($pdo): void {
         $moduleRouteFiles = glob(__DIR__ . '/routes/*.php') ?: [];
         sort($moduleRouteFiles);
 
         foreach ($moduleRouteFiles as $moduleRouteFile) {
-            (require $moduleRouteFile)($router);
+            (require $moduleRouteFile)($router, $pdo);
         }
     });
 };

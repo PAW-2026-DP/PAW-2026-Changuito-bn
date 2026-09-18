@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Middleware;
 
 use App\Domain\Exception\AccesoDenegadoException;
+use App\Domain\Exception\CredencialesInvalidasException;
 use App\Domain\Exception\EntidadNoEncontradaException;
 use App\Domain\Exception\TransicionInvalidaException;
 use App\Domain\Exception\ValidacionException;
@@ -25,6 +26,8 @@ final class ExceptionMiddleware implements Middleware
     {
         try {
             return $next->handle($request);
+        } catch (CredencialesInvalidasException $exception) {
+            return Response::error($exception->getMessage(), 401);
         } catch (EntidadNoEncontradaException $exception) {
             return Response::error($exception->getMessage(), 404);
         } catch (AccesoDenegadoException $exception) {

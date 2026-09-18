@@ -52,8 +52,9 @@ foreach ($pendientes as $archivo) {
         exit(1);
     }
 
-    $pdo->beginTransaction();
-
+    // Sin transacción: en MariaDB cada sentencia DDL hace un commit implícito,
+    // así que envolverlas solo rompe el commit posterior. Una migración que
+    // falla a la mitad se corrige con una migración nueva, no con rollback.
     try {
         $pdo->exec($sql);
 
@@ -62,10 +63,8 @@ foreach ($pendientes as $archivo) {
         );
         $registrar->execute(['migration' => $nombre, 'appliedAt' => date('Y-m-d H:i:s')]);
 
-        $pdo->commit();
         fwrite(STDOUT, "Aplicada: {$nombre}\n");
     } catch (\Throwable $exception) {
-        $pdo->rollBack();
         fwrite(STDERR, "Error aplicando {$nombre}: {$exception->getMessage()}\n");
         exit(1);
     }
