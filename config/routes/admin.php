@@ -37,5 +37,31 @@ return static function (Router $router, PDO $pdo): void {
         $router->post('/usuarios/{id}/desactivacion', new CallableHandler(
             static fn (Request $request): Response => $usuarios->desactivar($request),
         ));
+
+        $comercios = $modulo['adminComercioController'];
+
+        $router->get('/supermercados', new CallableHandler(
+            static fn (Request $request): Response => $comercios->listarSupermercados($request),
+        ));
+
+        $router->post('/supermercados', new CallableHandler(
+            static fn (Request $request): Response => $comercios->crearSupermercado($request),
+        ));
+
+        $router->get('/supermercados/{id}/sucursales', new CallableHandler(
+            static fn (Request $request): Response => $comercios->listarSucursales($request),
+        ));
+
+        $router->post('/supermercados/{id}/sucursales', new CallableHandler(
+            static fn (Request $request): Response => $comercios->crearSucursal($request),
+        ));
+
+        $router->put('/sucursales/{id}', new CallableHandler(
+            static fn (Request $request): Response => $comercios->actualizarSucursal($request),
+        ));
+
+        $router->put('/sucursales/{id}/zona-cobertura', new CallableHandler(
+            static fn (Request $request): Response => $comercios->definirZonaCobertura($request),
+        ));
     });
 };
